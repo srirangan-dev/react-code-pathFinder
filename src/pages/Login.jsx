@@ -3,42 +3,50 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
-  const navigate    = useNavigate()
-  const { login }   = useAuth()
+  const navigate = useNavigate()
+  const { login } = useAuth()
 
-  const [form,     setForm]     = useState({ email: '', password: '' })
-  const [error,    setError]    = useState('')
-  const [busy,     setBusy]     = useState(false)
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
   const [showPass, setShowPass] = useState(false)
 
   const update = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError('') }
 
   const handleSubmit = async () => {
-    if (!form.email)              { setError('Please enter your email.'); return }
-    if (!form.password)           { setError('Please enter your password.'); return }
+    if (!form.email) { setError('Please enter your email.'); return }
+    if (!form.password) { setError('Please enter your password.'); return }
     if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return }
 
     setBusy(true)
-    await new Promise(r => setTimeout(r, 700))
-    setBusy(false)
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
 
-    // Check if an account exists in localStorage
-    const stored = localStorage.getItem('pf_accounts')
-    const accounts = stored ? JSON.parse(stored) : []
+      const data = await response.json();
 
-    const match = accounts.find(
-      acc => acc.email === form.email && acc.password === form.password
-    )
+      if (!response.ok) {
+        setError(data.msg || 'Invalid credentials');
+        setBusy(false);
+        return;
+      }
 
-    if (!match) {
-      // No account found → send to Signup
-      navigate('/signup')
-      return
+      // Store token if needed, but for now we'll just log in
+      if (data.token) {
+        localStorage.setItem('pf_token', data.token);
+      }
+
+      login(data.user);
+      navigate('/');
+    } catch (err) {
+      setError('Something went wrong. Please check your connection.');
+      console.error('Login error:', err);
+    } finally {
+      setBusy(false);
     }
-
-    // Account found → log in and enter website
-    login({ name: match.name, email: match.email, stream: match.stream, grade: match.grade })
-    navigate('/')
   }
 
   return (
@@ -72,7 +80,7 @@ export default function Login() {
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   style={{ width: '100%', padding: '13px 14px 13px 42px', borderRadius: 12, border: '1.5px solid #E8E0D5', fontFamily: 'Sora, sans-serif', fontSize: '0.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                   onFocus={e => e.target.style.borderColor = '#F97316'}
-                  onBlur={e  => e.target.style.borderColor = '#E8E0D5'}
+                  onBlur={e => e.target.style.borderColor = '#E8E0D5'}
                 />
               </div>
             </div>
@@ -90,7 +98,7 @@ export default function Login() {
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   style={{ width: '100%', padding: '13px 44px 13px 42px', borderRadius: 12, border: '1.5px solid #E8E0D5', fontFamily: 'Sora, sans-serif', fontSize: '0.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                   onFocus={e => e.target.style.borderColor = '#F97316'}
-                  onBlur={e  => e.target.style.borderColor = '#E8E0D5'}
+                  onBlur={e => e.target.style.borderColor = '#E8E0D5'}
                 />
                 <button onClick={() => setShowPass(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>
                   {showPass ? '🙈' : '👁️'}

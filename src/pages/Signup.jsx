@@ -3,44 +3,51 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Signup() {
-  const navigate  = useNavigate()
+  const navigate = useNavigate()
   const { login } = useAuth()
 
-  const [form,     setForm]     = useState({ name: '', email: '', password: '' })
-  const [error,    setError]    = useState('')
-  const [busy,     setBusy]     = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
   const [showPass, setShowPass] = useState(false)
 
   const update = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError('') }
 
   const handleSubmit = async () => {
-    if (!form.name)               { setError('Please enter your full name.'); return }
-    if (!form.email)              { setError('Please enter your email.'); return }
-    if (!form.password)           { setError('Please enter a password.'); return }
+    if (!form.name) { setError('Please enter your full name.'); return }
+    if (!form.email) { setError('Please enter your email.'); return }
+    if (!form.password) { setError('Please enter a password.'); return }
     if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return }
 
     setBusy(true)
-    await new Promise(r => setTimeout(r, 900))
-    setBusy(false)
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
 
-    // Save account to localStorage
-    const existing = localStorage.getItem('pf_accounts')
-    const accounts = existing ? JSON.parse(existing) : []
+      const data = await response.json();
 
-    const alreadyExists = accounts.find(a => a.email === form.email)
-    if (!alreadyExists) {
-      accounts.push({
-        name:     form.name,
-        email:    form.email,
-        password: form.password,
-        stream:   '',
-        grade:    '',
-      })
-      localStorage.setItem('pf_accounts', JSON.stringify(accounts))
+      if (!response.ok) {
+        setError(data.msg || 'Setup failed. Please try a different email.');
+        setBusy(false);
+        return;
+      }
+
+      // Save token if needed
+      if (data.token) {
+        localStorage.setItem('pf_token', data.token);
+      }
+
+      login(data.user);
+      navigate('/');
+    } catch (err) {
+      setError('Something went wrong. Please check your connection.');
+      console.error('Signup error:', err);
+    } finally {
+      setBusy(false);
     }
-
-    login({ name: form.name, email: form.email, stream: '', grade: '' })
-    navigate('/')
   }
 
   return (
@@ -78,7 +85,7 @@ export default function Signup() {
                   onChange={e => update('name', e.target.value)}
                   style={{ width: '100%', padding: '13px 14px 13px 42px', borderRadius: 12, border: '1.5px solid #E8E0D5', fontFamily: 'Sora, sans-serif', fontSize: '0.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.borderColor = '#F97316'}
-                  onBlur={e  => e.target.style.borderColor = '#E8E0D5'}
+                  onBlur={e => e.target.style.borderColor = '#E8E0D5'}
                 />
               </div>
             </div>
@@ -92,7 +99,7 @@ export default function Signup() {
                   onChange={e => update('email', e.target.value)}
                   style={{ width: '100%', padding: '13px 14px 13px 42px', borderRadius: 12, border: '1.5px solid #E8E0D5', fontFamily: 'Sora, sans-serif', fontSize: '0.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.borderColor = '#F97316'}
-                  onBlur={e  => e.target.style.borderColor = '#E8E0D5'}
+                  onBlur={e => e.target.style.borderColor = '#E8E0D5'}
                 />
               </div>
             </div>
@@ -107,7 +114,7 @@ export default function Signup() {
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   style={{ width: '100%', padding: '13px 44px 13px 42px', borderRadius: 12, border: '1.5px solid #E8E0D5', fontFamily: 'Sora, sans-serif', fontSize: '0.9rem', color: '#1E293B', outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.borderColor = '#F97316'}
-                  onBlur={e  => e.target.style.borderColor = '#E8E0D5'}
+                  onBlur={e => e.target.style.borderColor = '#E8E0D5'}
                 />
                 <button onClick={() => setShowPass(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>
                   {showPass ? '🙈' : '👁️'}
