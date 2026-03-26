@@ -1,5 +1,6 @@
 const videos = [
   {
+    
     id: 1,
     topic: "Mathematics",
     title: "Introduction to Algebra",
