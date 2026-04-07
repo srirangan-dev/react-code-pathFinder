@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────
 //  FIELDS DATA  (shared between Quiz.jsx and FieldQuiz.jsx)
+
 // ─────────────────────────────────────────────────────────
 export const FIELDS = [
   {
